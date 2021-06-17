@@ -29,7 +29,7 @@ void CLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, 
         const double rotation = (slider.getValue() - slider.getMinimum())
             / (slider.getMaximum() - slider.getMinimum());
 
-        const int frames = 30;
+        const int frames = 60;
         const int frameId = (int)ceil(rotation * ((double)frames - 1.0));
         const float radius = juce::jmin(width / 1.0f, height / 1.0f);
         const float centerX = x + width * 0.5f;
@@ -39,7 +39,7 @@ void CLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, 
 
         int imgWidth = knob.getWidth();
         int imgHeight = knob.getHeight() / frames;
-        g.drawImage(knob, 0, 0, imgWidth, imgHeight, 0, imgHeight * frameId, imgWidth, imgHeight);
+        g.drawImage(knob, 0, 0, 100, 100, 0, imgHeight * frameId, imgWidth, imgHeight);
     }
 }
 

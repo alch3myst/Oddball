@@ -54,12 +54,11 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState apvts;
+    float bpm, rateTime, bpmIntv = 0;
 
 private:
 
-    juce::AudioPlayHead* playHead;
-    juce::AudioPlayHead::CurrentPositionInfo currentPosition;
-
+    juce::AudioPlayHead::CurrentPositionInfo positionInfo;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
 
     juce::dsp::DelayLine<float> delayL{ 50800 };

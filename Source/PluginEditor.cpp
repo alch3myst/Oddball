@@ -32,7 +32,7 @@ OddballtheAlchemystAudioProcessorEditor::OddballtheAlchemystAudioProcessorEditor
     brrrKnob.setTextValueSuffix("\nBRRR");
 
     detuneKnob.setSliderStyle(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag);
-    detuneKnob.setTextValueSuffix("\nDetune");
+    detuneKnob.setTextValueSuffix("\nGlitch");
      
     tapKnob.setSliderStyle(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag);
     tapKnob.setTextValueSuffix("\nTap");
@@ -56,7 +56,8 @@ OddballtheAlchemystAudioProcessorEditor::OddballtheAlchemystAudioProcessorEditor
 
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (360, 480);
+    setSize (370, 490);
+    setResizable(false, false);
 }
 
 OddballtheAlchemystAudioProcessorEditor::~OddballtheAlchemystAudioProcessorEditor()
@@ -74,7 +75,8 @@ void OddballtheAlchemystAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (15.0f);
-    //g.drawFittedText(juce::File::getCurrentWorkingDirectory().getFullPathName(), getLocalBounds(), juce::Justification::centred, 1);
+    //g.drawFittedText(juce::String(audioProcessor.bpm), getLocalBounds(), juce::Justification::centred, 1);
+
 }
 
 void OddballtheAlchemystAudioProcessorEditor::resized()
@@ -82,10 +84,12 @@ void OddballtheAlchemystAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
 
-    wowoKnob.setBounds(getWidth() * 0.05, getHeight() * 0.2, 100, 120);
-    softnessKnob.setBounds(getWidth() * 0.08, getHeight() * 0.45, 100, 120);
-    brrrKnob.setBounds(getWidth() * 0.16, getHeight() * 0.67, 100, 120);
-    detuneKnob.setBounds(getWidth() * 0.4, getHeight() * 0.32, 100, 120);
-    tapKnob.setBounds(getWidth() * 0.47, getHeight() * 0.65, 100, 120);
-    dryWetKnob.setBounds(getWidth() * 0.87 - 41, getHeight() * 0.5 -41, 100, 120);
+    wowoKnob.setBounds(getWidth() * 0.03, getHeight() * 0.07, 100, 120);
+    softnessKnob.setBounds(getWidth() * 0.04, getHeight() * 0.32, 100, 120);
+    brrrKnob.setBounds(getWidth() * 0.07, getHeight() * 0.57, 100, 120);
+
+    detuneKnob.setBounds((getWidth() * 0.43) - 25, getHeight() * 0.22, 100, 120);
+    tapKnob.setBounds((getWidth() * 0.5) - 25, getHeight() * 0.61, 100, 120);
+
+    dryWetKnob.setBounds(getWidth() * 0.8 - 25, getHeight() * 0.5 -60, 100, 120);
 }

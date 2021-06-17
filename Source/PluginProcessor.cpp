@@ -22,6 +22,7 @@ OddballtheAlchemystAudioProcessor::OddballtheAlchemystAudioProcessor()
         ), apvts(*this, nullptr, "Parameters", createParameters())
     #endif
 {
+    
 }
 
 OddballtheAlchemystAudioProcessor::~OddballtheAlchemystAudioProcessor()
@@ -127,7 +128,6 @@ void OddballtheAlchemystAudioProcessor::prepareToPlay(double sampleRate, int sam
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-
     lastSampleRate = sampleRate;
 
     juce::dsp::ProcessSpec spec;
@@ -146,6 +146,7 @@ void OddballtheAlchemystAudioProcessor::prepareToPlay(double sampleRate, int sam
 
     tapR.reset();
     tapR.prepare(spec);
+
 }
 
 void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
@@ -153,6 +154,12 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
+    juce::AudioPlayHead* playHead = this->getPlayHead();
+    if (playHead) {
+        playHead->getCurrentPosition(positionInfo);
+        if (positionInfo.bpm) bpm = positionInfo.bpm;
+    }
+    bpmIntv = (60. / 130) * lastSampleRate;
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
@@ -164,7 +171,9 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
     float dryWet = apvts.getRawParameterValue("DRYWET")->load();
     float brr = apvts.getRawParameterValue("BRRR")->load();
     float tap = apvts.getRawParameterValue("TAP")->load();
-    rate = brr / getSampleRate();
+
+    rate =  brr/lastSampleRate;
+    //rate = brr / getSampleRate();
     
     float test = apvts.getRawParameterValue("TEST")->load();
 
@@ -173,7 +182,8 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
     auto* channelDataL = buffer.getWritePointer(0);
     auto* channelDataR = buffer.getWritePointer(1);
 
-    
+    float fadeLength = 30.f;
+    float fade;
 
     /*
     **
@@ -196,7 +206,6 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
         // final lfo
         lfoWave = std::cosf(saw / softness);
         phaser = (wowo * lfoWave) + (saw * detune);
-        //phaser = (wowo * lfoWave) + fmodf( ((lastSampleRate / 10000) * (saw * detune) ), bufferLength);
 
         // TODO: fix the popping :l
         delayL.pushSample(0, channelDataL[sample]);
@@ -207,17 +216,24 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
         
 
         if (test > 0.5f) { // DEBUG
-            channelDataL[sample] = (channelDataL[sample] * (1 - dryWet)) + ((outL * cosf(saw)) * dryWet);
+            if (sample < fadeLength) fade = sample / fadeLength;
+            if (sample > bufferLength - fadeLength) fade = (bufferLength - sample) / fadeLength;
+
+            channelDataL[sample] = (channelDataL[sample] * (1 - dryWet)) + ( ((outL * cosf(saw)) * fade) * dryWet);
+            //channelDataL[sample] = (channelDataL[sample] * (1 - dryWet)) + outL * dryWet;
 
             // tap delay = easy stereo effect
-            tapR.pushSample(1, (channelDataL[sample] * (1 - dryWet)) + ((outR * cosf(saw)) * dryWet));
+            tapR.pushSample(1, (channelDataL[sample] * (1 - dryWet)) + (((outR * cosf(saw)) * fade) * dryWet));
+            //tapR.pushSample(1, (channelDataL[sample] * (1 - dryWet)) + outR * dryWet);
             tapOut = tapR.popSample(1);
             channelDataR[sample] = tapOut;
+
         }
         else {
-            channelDataL[sample] = lfoWave * dryWet;
-            channelDataR[sample] = phaser * dryWet;
+            channelDataL[sample] = lfo * dryWet;
+            channelDataR[sample] = lfo * dryWet;
         }
+
     }
 }
 
@@ -225,10 +241,10 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
 juce::AudioProcessorValueTreeState::ParameterLayout OddballtheAlchemystAudioProcessor::createParameters() {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> parameters;
 
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("SOFTNESS", "sofftness", 1.f, 5.f, 2.f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("WOWO", "WoWo", 0.f, 3175.f, 3.f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("BRRR", "Brrr", 0.f, 254.f, 10.f));
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DETUNE", "Detune", -1016.f, 1016.f, 0.f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("SOFTNESS", "sofftness", 1.f, 8.f, 2.f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("WOWO", "WoWo", 0.f, 4096.f, 4.f));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("BRRR", "Brrr", 0, 128, 10));
+    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DETUNE", "Glitch", -1024.f, 1024.f, 0.f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("TAP", "Tap", 0.f, 16.f, 0.f));
 
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("TEST", "Test", 0.f, 1.f, 1.f));

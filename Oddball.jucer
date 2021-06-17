@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="Q1w0C4" name="Oddball" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
-              companyName="Alch3myst">
+              companyName="Pulse by FarAway" version="1.0.0" companyCopyright="All rights reserved to FarAway 2021">
   <MAINGROUP id="tOYTaD" name="Oddball">
     <GROUP id="{0B84BAC0-7952-225D-9D64-3DAAEDBAE7AE}" name="Images">
       <FILE id="iTz1ya" name="bg.jpg" compile="0" resource="1" file="Source/Images/bg.jpg"/>
