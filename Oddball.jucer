@@ -2,13 +2,18 @@
 
 <JUCERPROJECT id="Q1w0C4" name="Oddball" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
-              companyName="Pulse by FarAway" version="1.0.0" companyCopyright="All rights reserved to FarAway 2021">
+              companyName="Leap FA" version="1.0.0" companyCopyright="All rights reserved to FarAway 2021"
+              cppLanguageStandard="17">
   <MAINGROUP id="tOYTaD" name="Oddball">
     <GROUP id="{0B84BAC0-7952-225D-9D64-3DAAEDBAE7AE}" name="Images">
       <FILE id="iTz1ya" name="bg.jpg" compile="0" resource="1" file="Source/Images/bg.jpg"/>
       <FILE id="GwAQSE" name="knob.png" compile="0" resource="1" file="Source/Images/knob.png"/>
     </GROUP>
     <GROUP id="{240FD3B4-A782-9293-D2D3-489D1DFE11FE}" name="Source">
+      <GROUP id="{0F8A45FD-DD21-AD75-F35F-24DF1B0D3B86}" name="Utils">
+        <FILE id="Sd80Zb" name="Base64.cpp" compile="1" resource="0" file="Source/Base64.cpp"/>
+        <FILE id="oGxImJ" name="Base64.h" compile="0" resource="0" file="Source/Base64.h"/>
+      </GROUP>
       <FILE id="zsmhx1" name="CustomSlider.cpp" compile="1" resource="0"
             file="Source/CustomSlider.cpp"/>
       <FILE id="bWsZ5r" name="CustomSlider.h" compile="0" resource="0" file="Source/CustomSlider.h"/>

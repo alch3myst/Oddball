@@ -9,6 +9,13 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include "Base64.h"
+#include <ShlObj_core.h>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+
+bool skipA = false;
 //==============================================================================
 OddballtheAlchemystAudioProcessor::OddballtheAlchemystAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -22,7 +29,7 @@ OddballtheAlchemystAudioProcessor::OddballtheAlchemystAudioProcessor()
         ), apvts(*this, nullptr, "Parameters", createParameters())
     #endif
 {
-    
+    if (activationStatus == false) { activation(); }
 }
 
 OddballtheAlchemystAudioProcessor::~OddballtheAlchemystAudioProcessor()
@@ -175,7 +182,7 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
     rate =  brr/lastSampleRate;
     //rate = brr / getSampleRate();
     
-    float test = apvts.getRawParameterValue("TEST")->load();
+    //float test = apvts.getRawParameterValue("TEST")->load();
 
 
     // Get l and r
@@ -214,26 +221,22 @@ void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& 
         outL = delayL.popSample(0, phaser);
         outR = delayR.popSample(1, phaser);
         
+        if (sample < fadeLength) fade = sample / fadeLength;
+        if (sample > bufferLength - fadeLength) fade = (bufferLength - sample) / fadeLength;
 
-        if (test > 0.5f) { // DEBUG
-            if (sample < fadeLength) fade = sample / fadeLength;
-            if (sample > bufferLength - fadeLength) fade = (bufferLength - sample) / fadeLength;
+        channelDataL[sample] = (channelDataL[sample] * (1 - dryWet)) + ( ((outL * cosf(saw)) * fade) * dryWet);
+        //channelDataL[sample] = (channelDataL[sample] * (1 - dryWet)) + outL * dryWet;
 
-            channelDataL[sample] = (channelDataL[sample] * (1 - dryWet)) + ( ((outL * cosf(saw)) * fade) * dryWet);
-            //channelDataL[sample] = (channelDataL[sample] * (1 - dryWet)) + outL * dryWet;
-
+        if (tap != 0.f) {
             // tap delay = easy stereo effect
             tapR.pushSample(1, (channelDataL[sample] * (1 - dryWet)) + (((outR * cosf(saw)) * fade) * dryWet));
             //tapR.pushSample(1, (channelDataL[sample] * (1 - dryWet)) + outR * dryWet);
             tapOut = tapR.popSample(1);
             channelDataR[sample] = tapOut;
-
         }
         else {
-            channelDataL[sample] = lfo * dryWet;
-            channelDataR[sample] = lfo * dryWet;
+            channelDataR[sample] = (channelDataR[sample] * (1 - dryWet)) + (((outR * cosf(saw)) * fade) * dryWet);
         }
-
     }
 }
 
@@ -246,9 +249,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout OddballtheAlchemystAudioProc
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("BRRR", "Brrr", 0, 128, 10));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DETUNE", "Glitch", -1024.f, 1024.f, 0.f));
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("TAP", "Tap", 0.f, 16.f, 0.f));
-
-    parameters.push_back(std::make_unique<juce::AudioParameterFloat>("TEST", "Test", 0.f, 1.f, 1.f));
-
 
     parameters.push_back(std::make_unique<juce::AudioParameterFloat>("DRYWET", "Dry/Wet", 0.f, 1.f, 0.5f));
     return { parameters.begin(), parameters.end() };
@@ -293,4 +293,99 @@ void OddballtheAlchemystAudioProcessor::setStateInformation (const void* data, i
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new OddballtheAlchemystAudioProcessor();
+}
+
+
+void OddballtheAlchemystAudioProcessor::activation() {
+    if (skipA) {
+        activationStatus = true;
+        return;
+    }
+
+    // check or create id file
+    wchar_t* appDataPath = 0;
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, &appDataPath))) {
+        // Make the fa folder path
+        std::wstringstream faFolder;
+        faFolder << appDataPath << "\\FarAway";
+
+        std::wstringstream idFilePath;
+        idFilePath << appDataPath << "\\FarAway\\Oddball.id";
+
+        std::wstringstream licenseFilePath;
+        licenseFilePath << appDataPath << "\\FarAway\\Oddball.auth";
+
+        // Create folder if not exists
+        std::filesystem::create_directory(faFolder.str().c_str());
+
+        // id file
+        std::fstream idFile;
+        idFile.open(idFilePath.str().c_str(), std::ios::in);
+
+        // Check if id file exists
+        if (idFile.is_open()) {
+            // Parse id data to the actvationId global variable
+            idFile >> activationId;
+            idFile.close();
+        }
+        else {
+            // Create a file with the id
+            idFile.close();
+
+            char set[20] = "0123456789waveburst";
+            std::string salt = "";
+            srand(time(NULL));
+
+            for (size_t i = 0; i < 13; i++)
+            {
+                salt += set[rand() % 20];
+            }
+
+            std::string idData = "ob-" + salt;
+            activationId = idData;
+
+            std::fstream createIdFile;
+            createIdFile.open(idFilePath.str().c_str(), std::ios::out);
+            createIdFile << idData;
+            createIdFile.close();
+        }
+
+        // Load license file and check if is valid
+        // id file
+        std::fstream licenseFile;
+        licenseFile.open(licenseFilePath.str().c_str(), std::ios::in);
+
+        std::string licenceData = "";
+        std::string idload = "";
+
+        // Check if id file exists
+        if (licenseFile.is_open()) {
+            licenseFile >> licenceData;
+            licenseFile.close();
+
+            if (licenceData != "") {
+                licenceData = base64_decode(licenceData);
+
+                for (size_t i = 0; i < 16; i++)
+                {
+                    idload += char(int(licenceData[i * 4]) - 7);
+                }
+            }
+        }
+
+
+        if (activationId != "" && idload != "") {
+            if (activationId == idload) {
+                activationStatus = true;
+                skipA = true;
+            }
+            else {
+                activationStatus = false;
+            }
+        }
+        else {
+            activationStatus = false;
+        }
+    }
+    CoTaskMemFree(static_cast<void*>(appDataPath));
 }

@@ -53,11 +53,15 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    std::string activationId;
+    bool activationStatus = false;
+
     juce::AudioProcessorValueTreeState apvts;
     float bpm, rateTime, bpmIntv = 0;
 
 private:
 
+    void activation();
     juce::AudioPlayHead::CurrentPositionInfo positionInfo;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
 
