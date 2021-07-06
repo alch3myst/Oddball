@@ -158,6 +158,8 @@ void OddballtheAlchemystAudioProcessor::prepareToPlay(double sampleRate, int sam
 
 void OddballtheAlchemystAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    if (!activationStatus) return;
+
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
